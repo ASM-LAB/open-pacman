@@ -88,6 +88,61 @@ test( 'una partida incorpora cuatro fantasmas distintos sin mutar MAZE', () => {
   assert.equal( JSON.stringify( context.window.MAZE ), originalMaze );
 } );
 
+test( 'el tablero tiene cuatro pastillas de poder y todas las comidas cuentan para ganar', () => {
+  const context = loadGame();
+  const game = context.window.createGame();
+  const corners = [ [ 1, 1 ], [ 26, 1 ], [ 1, 29 ], [ 26, 29 ] ];
+  const powerPellets = [];
+  for ( let y = 0; y < game.grid.length; y++ ) {
+    for ( let x = 0; x < game.grid[ y ].length; x++ ) {
+      if ( game.grid[ y ][ x ] === 4 ) powerPellets.push( [ x, y ] );
+    }
+  }
+
+  assert.deepEqual( powerPellets, corners );
+  assert.equal( game.pelletsRemaining, game.grid.flat().filter( ( tile ) => tile === 2 || tile === 4 ).length );
+} );
+
+test( 'comer una pastilla suma 50, activa poder seis segundos y al expirar vuelve a ser peligrosa', () => {
+  const context = loadGame();
+  const game = context.window.createGame();
+  Object.assign( game.pacman, { x: 1, y: 1, speed: 0 } );
+  game.ghosts.forEach( ( ghost ) => {
+    Object.assign( ghost, { x: 20, y: 20, speed: 0, released: true, exited: true } );
+  } );
+  const remaining = game.pelletsRemaining;
+
+  context.window.update( game, 1000 );
+  assert.equal( game.grid[ 1 ][ 1 ], 0 );
+  assert.equal( game.score, 50 );
+  assert.equal( game.pelletsRemaining, remaining - 1 );
+  assert.equal( game.powerUntil, 7000 );
+  assert.equal( game.powerActive, true );
+
+  context.window.update( game, 6999 );
+  assert.equal( game.powerActive, true );
+  context.window.update( game, 7000 );
+  assert.equal( game.powerActive, false );
+} );
+
+test( 'tocar a un fantasma vulnerable lo devuelve a casa sin perder una vida', () => {
+  const context = loadGame();
+  const game = context.window.createGame();
+  const ghost = game.ghosts[ 0 ];
+  Object.assign( game.pacman, { x: 1, y: 1, speed: 0 } );
+  game.ghosts.forEach( ( candidate ) => {
+    Object.assign( candidate, { x: 20, y: 20, speed: 0, released: true, exited: true } );
+  } );
+  Object.assign( ghost, { x: 1, y: 1 } );
+
+  context.window.update( game, 1000 );
+
+  assert.equal( game.lives, 3 );
+  assert.deepEqual( [ ghost.x, ghost.y ], [ 13, 14 ] );
+  assert.equal( ghost.exited, false );
+  assert.equal( ghost.released, false );
+} );
+
 test( 'el perseguidor elige una salida legal que acerca a Pacman', () => {
   const context = loadGame();
   const direction = chooseDirection( context, {
@@ -236,13 +291,14 @@ test( 'perder una vida reinicia posiciones, turnos y reloj de salida', () => {
 test( 'el renderizador usa los cuatro colores y mantiene el canvas de 560 por 620', () => {
   const context = loadGame( true );
   const fills = [];
+  const radii = [];
   const ctx = {
     fillStyle: '',
     beginPath() {},
     moveTo() {},
     lineTo() {},
     stroke() {},
-    arc() {},
+    arc( _x, _y, radius ) { radii.push( radius ); },
     closePath() {},
     fill() { fills.push( this.fillStyle ); },
     fillRect() {},
@@ -252,6 +308,13 @@ test( 'el renderizador usa los cuatro colores y mantiene el canvas de 560 por 62
 
   const colors = [ '#ff0000', '#ffb8ff', '#00ffff', '#ffb852' ];
   assert.deepEqual( fills.filter( ( color ) => colors.includes( color ) ), colors );
+  assert.equal( radii.filter( ( radius ) => radius === 6 ).length, 4 );
+
+  fills.length = 0;
+  const poweredGame = context.window.createGame();
+  poweredGame.powerActive = true;
+  context.window.draw( ctx, poweredGame, 0 );
+  assert.equal( fills.filter( ( color ) => color === '#2121ff' ).length, 4 );
   const html = fs.readFileSync( path.join( ROOT, 'src/index.html' ), 'utf8' );
   assert.match( html, /width="560" height="620"/ );
 } );
