@@ -34,6 +34,7 @@ function showOverlay( title, cls, btnLabel ) {
 function startGame() {
   game = createGame();
   game.state = 'playing';
+  game.releaseStartTime = performance.now();
   overlay.classList.remove( 'show' );
 }
 
@@ -42,7 +43,7 @@ if ( actionBtn ) actionBtn.addEventListener( 'click', startGame );
 function loop() {
   frame++;
   if ( game.state === 'playing' ) {
-    update( game );
+    update( game, performance.now() );
     if ( game.state === 'won' ) showOverlay( 'GANASTE', 'win', 'Reiniciar' );
     else if ( game.state === 'lost' ) showOverlay( 'PERDISTE', 'lose', 'Reiniciar' );
   }
