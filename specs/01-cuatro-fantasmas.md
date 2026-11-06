@@ -15,7 +15,7 @@
 
 **Fuera de alcance (para futuras especificaciones):**
 
-- Pastillas de poder y fantasmas vulnerables.
+- Pastillas de poder y fantasmas vulnerables (incorporados en la especificación 02).
 - Réplica exacta de las peculiaridades de la IA arcade original.
 - Cambios a la velocidad de movimiento, las vidas o la puntuación.
 
@@ -85,7 +85,7 @@ Los tiempos de salida son 0, 2000, 4000 y 6000 ms. Los fantasmas esperan quietos
 
 ## Qué **no** está en esta especificación
 
-- Pastillas de poder ni fantasmas vulnerables.
+- La mecánica detallada de pastillas de poder y fantasmas vulnerables (véase la especificación 02).
 - Velocidades diferentes para los fantasmas.
 - Réplica exacta de la IA arcade original.
 - Cambios a vidas, puntuación o dimensiones del laberinto y del canvas.
